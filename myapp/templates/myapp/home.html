@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <title>Home</title>
+</head>
+<body class="bg-gray-100">
+  <nav class="bg-gradient-to-r from-blue-500 to-blue-700 p-4">
+    <div class="container mx-auto flex justify-between items-center text-white">
+        <h1 class="font-extrabold text-2xl">MEETING PORTAL</h1> <!-- Increased font size -->
+        {% if user.is_authenticated %}
+        <h1 class="ml-auto">Logged in as: {{ user.email }}</h1>
+        <a href="{% url 'signout' %}" class="bg-white text-blue-500 py-2 px-4 rounded ml-8">Logout</a>
+        {% else %}
+        <a href="{% url 'signin' %}" class="bg-white text-blue-500 py-2 px-4 rounded">Login</a>
+        {% endif %}
+    </div>
+</nav>
+<div class="container mx-auto mt-10">
+    {% if user.is_authenticated %}
+    <h1 class="flex justify-between items-center text-2xl font-extrabold mb-6 text-white bg-gradient-to-r from-blue-500 to-blue-700 p-4 rounded-lg shadow-md">
+      Events
+      <span id="liveClock" class="text-xl font-bold"></span>
+  </h1>
+  <div style="display: flex; gap: 20px;">
+    <div class="mb-4 w-64 relative">
+        <select id="filter" name="filter" onchange="updateFilters();" class="mt-1 block w-full py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 focus:outline-none focus:shadow-outline appearance-none">
+            <option value="?filter=all" {% if filter == 'all' %}selected{% endif %}>All events</option>
+            <option value="?filter=today" {% if filter == 'today' %}selected{% endif %}>Today's events</option>
+            <option value="?filter=past" {% if filter == 'past' %}selected{% endif %}>Past events</option>
+            <option value="?filter=upcoming" {% if filter == 'upcoming' %}selected{% endif %}>Upcoming events</option>
+        </select>
+        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white">
+            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M10 12l-6-6h12l-6 6z"/></svg>
+        </div>
+    </div>
+    <div class="mb-4 w-64 relative">
+      <select id="locationFilter" name="locationFilter" onchange="updateFilters();" class="mt-1 block w-full py-2 px-4 bg-blue-500 text-white rounded hover:bg-blue-700 focus:outline-none focus:shadow-outline appearance-none">
+          <option value="all" {% if locationFilter == 'all' %}selected{% endif %}>All Locations</option>
+          <option value="TSF Main Conference Hall" {% if locationFilter == 'TSF Main Conference Hall' %}selected{% endif %}>TSF Main Conference Hall</option>
+          <option value="TSF Finance Conference Hall" {% if locationFilter == 'TSF Finance Conference Hall' %}selected{% endif %}>TSF Finance Conference Hall</option>
+          <option value="TSF Supply Chain Conference Hall" {% if locationFilter == 'TSF Supply Chain Conference Hall' %}selected{% endif %}>TSF Supply Chain Conference Hall</option>
+          <option value="TSF Urban Conference Hall" {% if locationFilter == 'TSF Urban Conference Hall' %}selected{% endif %}>TSF Urban Conference Hall</option>
+      </select>
+      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-white">
+          <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M10 12l-6-6h12l-6 6z"/></svg>
+      </div>
+  </div>
+  </div>
+  
+  
+    <div class="relative overflow-x-auto shadow-md sm:rounded-lg">
+        <div style="height: 425px; overflow-y: auto;">
+            <table class="w-full text-sm text-left text-gray-500">
+                <!-- Fixed Table Header -->
+                <thead class="sticky top-0 z-10 text-xs text-gray-700 uppercase bg-gray-50">
+                  <tr>
+                      <th scope="col" class="px-6 py-3 bg-blue-100 text-blue-700">
+                          <i class="fas fa-calendar-alt mr-2 text-blue-500"></i>Event
+                      </th>
+                      <th scope="col" class="px-6 py-3">
+                          <i class="fas fa-clock mr-2 text-blue-500"></i>Date
+                      </th>
+                      <th scope="col" class="px-6 py-3">
+                          <i class="fas fa-hourglass-half mr-2 text-blue-500"></i>Duration
+                      </th>
+                      <th scope="col" class="px-6 py-3">
+                          <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>Location
+                      </th>
+                      <th scope="col" class="px-6 py-3">
+                          <i class="fas fa-users mr-2 text-blue-500"></i>Organizer & Attendees
+                      </th>
+                      <th scope="col" class="px-6 py-3">
+                          <i class="fas fa-info-circle mr-2 text-blue-500"></i>Details
+                      </th>
+                  </tr>
+              </thead>
+              
+              
+                <tbody>
+                {% if events %}
+                    {% for event in events %}
+                    <tr class="bg-white border-b hover:bg-gray-50">
+                        <th scope="row" class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-block px-3 py-1 font-medium text-white bg-gradient-to-r from-blue-500 to-blue-700 rounded-lg shadow-md">
+                                {{ event.subject }}
+                            </span>
+                        </th>
+                        <td class="px-6 py-4">{{ event.start_time|date:"F j, Y" }}</td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center">
+                                <span>{{ event.start_time|time:"g:i A" }}</span>
+                                <i class="fas fa-arrow-right text-blue-500 mx-2"></i>
+                                <span>{{ event.end_time|time:"g:i A" }}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">{{ event.location }}</td>
+                        <td class="px-6 py-4">
+                            <button type="button" class="px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700 focus:outline-none focus:shadow-outline" onclick="openModal('{{ event.organizer }}', '{{ event.attendees }}')">
+                                View
+                            </button>
+                        </td>
+                        <td class="px-6 py-4"><i class="fas fa-info-circle text-blue-500"></i>
+                          <a href="{{ event.web_link }}" class="text-blue-600 hover:underline">Event Details</a></td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                      <td colspan="6" class="text-center py-4 text-xl font-bold">No events to display</td>
+                    </tr>
+                {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    {% load static %}
+    <div class="flex flex-col justify-center items-center">
+        <div class="bg-white w-3/4 p-6 rounded-lg shadow-lg text-center">
+            <img src="{% static 'myapp/logo-one.png' %}" alt="Logo" class="mb-8">
+            <h2 class="text-3xl font-extrabold text-gray-900 mb-6">
+                Welcome to,
+            </h2>
+            <h1 class="text-3xl font-extrabold text-gray-900 mb-6">
+                TATA STEEL FOUNDATION CONFERENCE PORTAL
+            </h1>
+            <p class="text-xl text-gray-600">
+                This is your one-stop platform for all event-related information. Log in to gain access to a comprehensive list of events, including today's meetings, past meetings, and future meetings. Join us in fostering collaboration and knowledge sharing within our community. Don't miss out, log in now!
+            </p>
+        </div>
+    </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Attendees & Organizer Modal -->
+<div id="attendeesModal" class="fixed z-10 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 relative">
+                <!-- Close icon at the top right corner -->
+                <span class="absolute top-2 right-4 cursor-pointer text-gray-600 hover:text-gray-800" onclick="closeModal()"><i class="fas fa-times fa-lg"></i></span>
+                <div class="sm:flex sm:items-start">
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h2 class="text-xl leading-6 font-medium text-gray-900 mb-2" id="modal-title">
+                            Organizer
+                        </h2>
+                        <div class="mt-2 overflow-y-auto" style="max-height: 9rem;" id="organiserModalBody">
+                            <!-- Organizer will be inserted here -->
+                        </div>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 mt-4">Attendees</h3>
+                        <div class="mt-2 overflow-y-auto" style="max-height: 9rem;" id="attendeesModalBody">
+                            <!-- Attendees will be inserted here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal script -->
+<script>
+  function openModal(organizer, attendees) {
+    // Parse organizer string into list
+    var organizerList = organizer.split(', ');
+
+    // Initialize an empty string to store the HTML for organizer
+    var organizerHTML = '';
+
+    // Loop through each organizer
+    for (var i = 0; i < organizerList.length; i++) {
+        organizerHTML += '<div style="border: 2px solid #1D4ED8; border-radius: 10px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);" class="p-2 mb-2">' + organizerList[i] + '</div>';
+    }
+
+    // Insert the HTML string into the organizer modal body
+    document.getElementById('organiserModalBody').innerHTML = organizerHTML;
+
+    // Parse attendees string into list
+    var attendeesList = attendees.split(', ');
+
+    // Remove the organizer from the attendees list if present
+    var index = attendeesList.indexOf(organizer);
+    if (index !== -1) {
+        attendeesList.splice(index, 1);
+    }
+
+    // Initialize an empty string to store the HTML for attendees
+    var attendeesHTML = '';
+
+    // Loop through each attendee
+    for (var i = 0; i < attendeesList.length; i++) {
+        attendeesHTML += '<div style="border: 2px solid #1D4ED8; border-radius: 10px; box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);" class="p-2 mb-2">' + attendeesList[i] + '</div>';
+    }
+
+    // Insert the HTML string into the attendees modal body
+    document.getElementById('attendeesModalBody').innerHTML = attendeesHTML;
+
+    // Display the modal
+    document.getElementById('attendeesModal').classList.remove('hidden');
+}
+
+function closeModal() {
+  // Hide the modal
+  document.getElementById('attendeesModal').classList.add('hidden');
+}
+
+
+function updateClock() {
+  const now = new Date();
+  let hours = now.getHours();
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  
+  // Convert to 12-hour format
+  hours = hours % 12;
+  // Convert 0 to 12 for displaying 12:xx instead of 0:xx
+  hours = hours ? hours : 12;
+
+  // Get the date in DD/MM/YYYY format
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = String(now.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+  const year = now.getFullYear();
+
+  document.getElementById('liveClock').textContent = `${day}/${month}/${year} ${hours}:${minutes}:${seconds} ${ampm}`;
+}
+
+// Update the clock immediately
+updateClock();
+
+// Update the clock every second
+setInterval(updateClock, 1000);
+
+function updateFilters() {
+  let filterValue = document.getElementById('filter').value;
+  let locationFilterValue = document.getElementById('locationFilter').value;
+  let newURL = '?';
+
+  if (filterValue) {
+      newURL += 'filter=' + filterValue.split('=')[1]; // Extract the filter value after the '='
+  }
+
+  if (locationFilterValue && locationFilterValue !== 'all') {
+      if (newURL !== '?') {
+          newURL += '&';
+      }
+      newURL += 'locationFilter=' + locationFilterValue;
+  }
+
+  location = newURL;
+}
+
+setTimeout(function(){
+  location.reload();
+}, 300000);
+
+
+</script>
+</body>
+</html>

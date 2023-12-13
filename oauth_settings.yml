@@ -1,0 +1,9 @@
+app_id: "<application_id>" 
+app_secret: "<client_secret>" 
+redirect: "<redirect_url>" 
+scopes:   
+    - user.read   
+    - mailboxsettings.read   
+    - calendars.readwrite 
+    - Calendars.Read
+authority: "https://login.microsoftonline.com/<tenant_id>"
